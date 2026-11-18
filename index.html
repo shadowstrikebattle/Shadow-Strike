@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SHADOW STRIKE - Ultimate FPS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#000;color:#fff;font-family:'Segoe UI',Arial,sans-serif;overflow:hidden;user-select:none}
+#gameWrap{position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%, rgba(255,180,0,.18), transparent 40%),radial-gradient(ellipse at 80% 20%, rgba(255,180,0,.15), transparent 40%),linear-gradient(#0a1628 0%, #111c2e 45%, #0b0f16 100%);overflow:hidden;cursor:crosshair}
+.rain{position:absolute;inset:0;pointer-events:none;opacity:.6}.drop{position:absolute;width:1px;height:18px;background:linear-gradient(transparent,rgba(255,255,255,.7));animation:fall linear infinite}@keyframes fall{to{transform:translateY(110vh)}}
+.light{position:absolute;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(255,190,60,.55),transparent 70%);filter:blur(8px)}
+#topBar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:linear-gradient(180deg,rgba(0,0,0,.85),transparent);z-index:20}
+.logo{font-weight:900;letter-spacing:2px;font-size:17px}.logo span{color:#ffb300}
+.badge{background:#ff2e2e;color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:800}
+#scoreBoard{position:absolute;top:54px;right:14px;text-align:right;z-index:20;font-size:12px;line-height:1.5}
+#scoreBoard b{color:#ffb300;font-size:19px}
+#minimap{position:absolute;left:14px;top:54px;width:86px;height:86px;background:rgba(0,0,0,.65);border:2px solid #00ff88;border-radius:50%;z-index:20;overflow:hidden}
+#minimap .me{position:absolute;left:50%;top:50%;width:8px;height:8px;background:#00ff88;border-radius:50%;transform:translate(-50%,-50%)}
+#minimap .dot{position:absolute;width:6px;height:6px;background:#ff1744;border-radius:50%}
+#minimap span{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:1px;color:#00ff88}
+#crosshair{position:absolute;left:50%;top:50%;width:48px;height:48px;transform:translate(-50%,-50%);z-index:15;pointer-events:none;transition:transform .08s}
+#crosshair:before,#crosshair:after{content:"";position:absolute;background:#00ff88;box-shadow:0 0 8px #00ff88}
+#crosshair:before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
+#crosshair:after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
+#crosshair .dot{position:absolute;left:50%;top:50%;width:6px;height:6px;background:#fff;border-radius:50%;transform:translate(-50%,-50%)}
+#crosshair .ring{position:absolute;inset:0;border:2px solid rgba(255,255,255,.85);border-radius:50%}
+#scope{position:absolute;inset:0;z-index:60;pointer-events:none;display:none;background:radial-gradient(circle at 50% 50%, transparent 118px, rgba(0,0,0,.98) 122px)}
+#scope.show{display:block}#scope .s-line{position:absolute;background:rgba(0,255,136,.7)}#scope .v{left:50%;top:0;width:1px;height:100%}#scope .h{top:50%;left:0;height:1px;width:100%}
+#scope .s-dot{position:absolute;left:50%;top:50%;width:6px;height:6px;background:#ff1744;border-radius:50%;transform:translate(-50%,-50%)}
+#scope .s-label{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:3px;color:#00ff88;text-align:center}
+.enemy{position:absolute;width:78px;height:116px;z-index:10;cursor:crosshair;filter:drop-shadow(0 8px 14px rgba(0,0,0,.6))}
+.enemy .body{width:100%;height:100%;background:linear-gradient(180deg,#2d3a2a,#1a241a);border-radius:18px 18px 10px 10px;border:2px solid #0f1710;position:relative;overflow:hidden}
+.enemy .head{width:38px;height:38px;background:#c9a87c;border-radius:50%;margin:7px auto 3px;border:3px solid #1a1a1a;position:relative;cursor:crosshair;display:flex;align-items:center;justify-content:center;font-size:14px}
+.enemy .head:after{content:"";position:absolute;left:6px;top:13px;width:24px;height:6px;background:#111;border-radius:4px}
+.enemy .vest{margin:6px 10px;background:#3a4a33;height:42px;border-radius:8px;border:1px solid #000;display:flex;align-items:center;justify-content:center;font-size:16px}
+.enemy .gun{height:8px;background:#111;margin:4px 8px;border-radius:4px}
+.enemy.hit{animation:hit .25s}.enemy.headshot{animation:headPop .3s}
+@keyframes hit{0%{transform:scale(1.15) rotate(2deg)}100%{transform:scale(1)}}@keyframes headPop{0%{transform:scale(1.3) rotate(-3deg)}100%{transform:scale(1)}}
+.boss{width:150px;height:200px;z-index:12}
+.boss .body{background:linear-gradient(180deg,#4a0000,#1a0000);border:3px solid #ff1744}
+.boss .head{width:56px;height:56px;background:#ffcc99;border:3px solid #ff1744}
+.boss .bossBar{position:absolute;top:-22px;left:0;right:0;height:10px;background:#333;border-radius:10px;overflow:hidden;border:1px solid #fff}
+.boss .bossFill{height:100%;width:100%;background:linear-gradient(90deg,#ff1744,#ffb300);transition:width .2s}
+.boss .bossName{position:absolute;top:-38px;left:0;right:0;text-align:center;font-size:11px;font-weight:900;color:#ff1744;letter-spacing:1px}
+#flash{position:absolute;right:8%;bottom:28%;width:220px;height:160px;pointer-events:none;z-index:30;display:none;background:radial-gradient(circle, #fff 0%, #ffd700 18%, #ff6a00 38%, transparent 70%);filter:blur(2px);clip-path:polygon(0 50%,35% 35%,30% 10%,50% 38%,78% 0%,62% 42%,100% 48%,58% 58%,75% 95%,48% 62%,32% 92%,38% 58%)}
+#flash.show{display:block;animation:flashAnim .12s}@keyframes flashAnim{0%{transform:scale(.7);opacity:1}100%{transform:scale(1.25);opacity:0}}
+#grenadeFx{position:absolute;inset:0;background:radial-gradient(circle, #fff 0%, #ff6a00 20%, #ff1744 40%, transparent 70%);opacity:0;pointer-events:none;z-index:55}
+#grenadeFx.show{opacity:1;animation:gFx .5s}@keyframes gFx{0%{opacity:1}100%{opacity:0}}
+#gun{position:absolute;right:0;bottom:0;width:58%;max-width:520px;z-index:25;pointer-events:none;filter:drop-shadow(0 -10px 20px rgba(0,0,0,.8));transition:transform .08s, opacity .2s}
+#gun .gunBody{height:72px;background:linear-gradient(180deg,#3a3f45,#15181c 60%,#000);border-radius:14px 0 0 0;border-top:3px solid #555;position:relative}
+#gun .sight{position:absolute;top:-28px;left:28%;width:78px;height:28px;background:#0a0a0a;border:2px solid #444;border-radius:8px;display:flex;align-items:center;justify-content:center}
+#gun .sight:after{content:"";width:34px;height:18px;border:2px solid #00ff88;border-radius:50%}
+#gun .barrel{position:absolute;top:18px;left:-58px;width:72px;height:20px;background:#0a0a0a;border-radius:6px}
+#gun .grip{position:absolute;bottom:-42px;right:22%;width:42px;height:52px;background:#1a1a1a;transform:rotate(10deg);border-radius:6px}
+#gun.recoil{transform:translateY(8px) rotate(-1.2deg)}#gun.scoped{opacity:0}
+#bottomHUD{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:flex-end;padding:10px 12px 12px;background:linear-gradient(0deg,rgba(0,0,0,.92),transparent);z-index:40;gap:6px;flex-wrap:wrap}
+.hudBox{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);border-radius:12px;padding:8px 12px;min-width:100px}
+.hudLabel{font-size:9px;letter-spacing:2px;opacity:.7}.hudVal{font-size:22px;font-weight:900;line-height:1}.hudVal small{font-size:11px;opacity:.7}
+#healthBar{height:8px;background:#333;border-radius:10px;overflow:hidden;margin-top:6px}#healthFill{height:100%;width:100%;background:linear-gradient(90deg,#00e676,#ffb300,#ff1744);transition:width .3s}
+#hitmarker{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(45deg);font-size:30px;color:#ff1744;opacity:0;z-index:35;pointer-events:none;font-weight:900}
+#hitmarker.show{opacity:1;animation:hm .25s}#hitmarker.head{color:#ffd700;font-size:38px}
+@keyframes hm{from{transform:translate(-50%,-50%) rotate(45deg) scale(1.4)}to{transform:translate(-50%,-50%) rotate(45deg) scale(1)}}
+#killBanner{position:absolute;left:50%;top:20%;transform:translateX(-50%);z-index:55;text-align:center;pointer-events:none;opacity:0}
+#killBanner.show{opacity:1;animation:banner .9s}#killBanner .big{font-size:34px;font-weight:900;letter-spacing:2px;text-shadow:0 0 20px rgba(255,0,0,.8), 0 4px 0 #000}#killBanner .sub{font-size:13px;letter-spacing:3px;color:#ffd700;font-weight:800;margin-top:4px}
+@keyframes banner{0%{transform:translateX(-50%) scale(.7);opacity:0}15%{transform:translateX(-50%) scale(1.15);opacity:1}80%{opacity:1}100%{transform:translateX(-50%) scale(1);opacity:0}}
+#streakBadge{position:absolute;left:14px;top:148px;z-index:20;background:linear-gradient(90deg,#ff1744,#ff6a00);padding:6px 12px;border-radius:20px;font-weight:900;font-size:11px;display:none}
+#streakBadge.show{display:block}
+#weaponBar{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:40}
+.weaponBtn{padding:8px 12px;border-radius:20px;border:2px solid #444;background:#111;color:#fff;font-size:12px;font-weight:800;cursor:pointer}
+.weaponBtn.active{background:#ffb300;color:#000;border-color:#ffb300}
+.btn{padding:11px 14px;border:none;border-radius:10px;font-weight:900;cursor:pointer}
+.btn-fire{background:#ff1744;color:#fff;font-size:14px}.btn-reload{background:#fff;color:#000}.btn-scope{background:#00e676;color:#000}.btn-grenade{background:#ff6a00;color:#fff}.btn-start{background:#ffb300;color:#000;font-size:17px;padding:15px 26px}.btn-sound{background:#222;color:#fff;padding:8px 12px;border-radius:8px}
+.overlay{position:absolute;inset:0;z-index:100;background:rgba(0,0,0,.84);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;overflow-y:auto}
+.overlay h1{font-size:32px;line-height:.95}.overlay h1 span{color:#ffb300}.overlay p{opacity:.85;margin:10px 0 12px;max-width:440px;line-height:1.6}
+.stats{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;justify-content:center}.stat{background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:10px 14px;min-width:84px}.stat b{font-size:20px;color:#ffb300}
+.hidden{display:none!important}#damage{position:absolute;inset:0;pointer-events:none;z-index:50;box-shadow:inset 0 0 90px rgba(255,0,0,.9);opacity:0;transition:opacity .2s}#damage.show{opacity:1}
+input{padding:12px 14px;border-radius:10px;border:1px solid #444;background:#111;color:#fff;width:100%;max-width:280px;font-size:15px;text-align:center;outline:none}
+.leaderboard{width:100%;max-width:340px;background:#111;border:1px solid #333;border-radius:12px;padding:12px;margin-top:10px;text-align:left}
+.leaderboard h3{font-size:13px;letter-spacing:2px;color:#ffb300;margin-bottom:8px}.lb-row{display:flex;justify-content:space-between;padding:7px 8px;border-radius:8px;font-size:13px}.lb-row:nth-child(even){background:#1e1e1e}.lb-row.me{background:#3a2a00;border:1px solid #ffb300}
+@media(max-width:600px){#gun{width:78%} .overlay h1{font-size:26px} #killBanner .big{font-size:26px}}
+</style>
+</head>
+<body>
+<div id="gameWrap">
+<div class="light" style="left:6%;top:8%"></div><div class="light" style="right:8%;top:6%"></div><div class="rain" id="rain"></div>
+<div id="topBar"><div class="logo">SHADOW <span>STRIKE</span></div><div style="display:flex;gap:6px;align-items:center"><button class="btn-sound" id="soundBtn" onclick="toggleSound()">🔊 ON</button><div class="badge">● ULTIMATE</div></div></div>
+<div id="minimap"><div class="me"></div><div class="dot" id="miniDot" style="left:60%;top:30%"></div><span>MAP</span></div>
+<div id="scoreBoard"><span id="playerNameDisplay">SHADOW STRIKE</span><br>KILLS <b id="kills">0</b> • 🎯 <b id="headshots" style="color:#ffd700">0</b> • 👹 <b id="bossKills" style="color:#ff1744">0</b><br><span id="timer">⏱ 90s</span> • WAVE <span id="wave">1</span> • LEVEL <b id="level">1</b></div>
+<div id="streakBadge">🔥 STREAK x0</div>
+<div id="crosshair"><div class="ring"></div><div class="dot"></div></div>
+<div id="scope"><div class="s-line v"></div><div class="s-line h"></div><div class="s-dot"></div><div class="s-label">SNIPER MODE • HEADSHOT = +3 PTS</div></div>
+<div id="hitmarker">✕</div><div id="flash"></div><div id="damage"></div><div id="grenadeFx"></div>
+<div id="killBanner"><div class="big" id="bannerBig">DOUBLE KILL!</div><div class="sub" id="bannerSub">+ BONUS</div></div>
+<div id="enemyLayer" style="position:absolute;inset:0"></div>
+<div id="weaponBar"><button class="weaponBtn active" id="w-m4" onclick="setWeapon('M4')">M4A1</button><button class="weaponBtn" id="w-sniper" onclick="setWeapon('SNIPER')">SNIPER</button><button class="weaponBtn" id="w-shotgun" onclick="setWeapon('SHOTGUN')">SHOTGUN</button></div>
+<div id="gun"><div class="gunBody"><div class="sight"></div><div class="barrel"></div><div class="grip"></div><div style="position:absolute;right:16px;top:14px;font-size:11px;letter-spacing:2px;opacity:.7" id="gunLabel">M4A1 • NIGHT OPS</div></div></div>
+<div id="bottomHUD">
+<div class="hudBox"><div class="hudLabel">HEALTH • ARMOR</div><div class="hudVal" id="healthText">100</div><div id="healthBar"><div id="healthFill"></div></div><div style="font-size:11px;margin-top:4px">🛡️ Armor: <span id="armor">0</span> • ❤️ Medkit: <span id="medkit">1</span> <button onclick="useMedkit()" style="background:#00e676;border:none;padding:2px 8px;border-radius:6px;font-weight:800;cursor:pointer">USE</button></div></div>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn btn-fire" id="fireBtn">🔥 FIRE</button><button class="btn btn-scope" id="scopeBtn">🎯 SCOPE</button><button class="btn btn-grenade" id="grenadeBtn">💣 GRENADE (<span id="grenades">2</span>)</button><button class="btn btn-reload" id="reloadBtn">↻ RELOAD</button></div>
+<div class="hudBox" style="text-align:right"><div class="hudLabel">AMMO • <span id="weaponName">M4A1</span></div><div class="hudVal"><span id="ammo">30</span> <small>/ <span id="maxAmmo">30</span></small></div><div class="hudLabel" style="margin-top:4px">TAP HEAD = HEADSHOT</div></div>
+</div>
+
+<div id="startScreen" class="overlay">
+<div style="font-size:12px;letter-spacing:4px;color:#ffb300">ULTIMATE EDITION • ALL FEATURES</div>
+<h1>SHADOW<br><span>STRIKE</span></h1>
+<p>🎯 Headshot +3 • 🔥 Killstreaks • 👹 Boss every 30s • 💣 Grenades • 🛡️ Armor • ❤️ Medkit • 🔫 3 Weapons • 🗺️ Minimap • 🏆 Leaderboard • 🔊 Sound</p>
+<input id="nameInput" value="SHADOW STRIKE" maxlength="14">
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:center"><button class="btn btn-start" onclick="startGame()">▶ START MISSION</button><button class="btn" style="background:#222;color:#fff" onclick="toggleSound()">🔊 Sound</button></div>
+<div style="margin-top:10px;font-size:12px;opacity:.8">Daily Challenge: Get 15 kills to unlock GOLD GUN skin ✨</div>
+<div class="stats"><div class="stat"><div>BEST</div><b id="best">0</b></div><div class="stat"><div>TIME</div><b>90s</b></div><div class="stat"><div>BOSS</div><b style="color:#ff1744">5 HITS</b></div></div>
+<div class="leaderboard"><h3>🏆 TOP SOLDIERS</h3><div id="lbList"></div></div>
+<p style="font-size:12px;opacity:.6">S = Scope • R = Reload • G = Grenade • 1/2/3 = Weapons • Space = Fire</p>
+</div>
+
+<div id="gameOver" class="overlay hidden">
+<div style="color:#ff1744;letter-spacing:4px;font-weight:900">MISSION COMPLETE</div>
+<h1 style="margin-top:10px">WELL DONE, <span id="finalName">SHADOW STRIKE</span>!</h1>
+<div id="goldMsg" style="display:none;background:linear-gradient(90deg,#ffb300,#ffd700);color:#000;padding:10px 16px;border-radius:10px;font-weight:900;margin-top:10px">✨ GOLD GUN UNLOCKED! Daily Challenge Complete!</div>
+<div class="stats">
+<div class="stat"><div>KILLS</div><b id="finalKills">0</b></div><div class="stat"><div>HEADSHOTS</div><b id="finalHead" style="color:#ffd700">0</b></div><div class="stat"><div>BOSS KILLS</div><b id="finalBoss" style="color:#ff1744">0</b></div><div class="stat"><div>BEST STREAK</div><b id="finalStreak">0</b></div><div class="stat"><div>ACCURACY</div><b id="finalAcc">0%</b></div><div class="stat"><div>SCORE</div><b id="finalScore">0</b></div>
+</div>
+<div style="display:flex;gap:8px"><button class="btn" style="background:#25D366;color:#fff" onclick="shareScore()">📲 Share on WhatsApp</button><button class="btn" style="background:#111;color:#fff;border:1px solid #444" onclick="copyLink()">🔗 Copy Game Link</button></div>
+<div class="leaderboard"><h3>🏆 LEADERBOARD</h3><div id="lbList2"></div></div>
+<button class="btn btn-start" onclick="startGame()" style="margin-top:14px">↻ PLAY AGAIN</button>
+<button class="btn" style="background:#222;color:#fff;margin-top:8px" onclick="showMenu()">🏠 MENU</button>
+</div>
+</div>
+
+<script>
+let kills=0, headshots=0, bossKills=0, ammo=30, maxAmmo=30, health=100, armor=0, medkits=1, grenades=2, timeLeft=90, wave=1, level=1, shots=0, hits=0, playing=false, timerInt, spawnInt, bossInt, scoped=false, soundOn=true, playerName='SHADOW STRIKE', weapon='M4', streak=0, bestStreak=0, lastKillTime=0, totalScore=0, bossHP=5, bossActive=false;
+let audioCtx=null;
+function getAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state=='suspended') audioCtx.resume(); return audioCtx; }
+function playGunSound(){ if(!soundOn) return; try{ let ctx=getAudio(); let buffer=ctx.createBuffer(1, ctx.sampleRate*0.18, ctx.sampleRate); let data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2.5); } let src=ctx.createBufferSource(); src.buffer=buffer; let filter=ctx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value= weapon=='SHOTGUN'?500:900; let gain=ctx.createGain(); gain.gain.value= weapon=='SHOTGUN'?0.9:0.6; src.connect(filter); filter.connect(gain); gain.connect(ctx.destination); src.start(); }catch(e){} }
+function playHeadshotSound(){ if(!soundOn) return; try{ let ctx=getAudio(); [2000,2600,3200].forEach((f,i)=>{ let o=ctx.createOscillator(); let g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=f; g.gain.value=0.15; o.start(ctx.currentTime+i*0.05); o.stop(ctx.currentTime+i*0.05+0.07); }); }catch(e){} }
+function playStreakSound(){ if(!soundOn) return; try{ let ctx=getAudio(); [500,700,900,1200].forEach((f,i)=>{ let o=ctx.createOscillator(); let g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=f; g.gain.value=0.14; o.start(ctx.currentTime+i*0.09); o.stop(ctx.currentTime+i*0.09+0.1); }); }catch(e){} }
+function playBossSound(){ if(!soundOn) return; try{ let ctx=getAudio(); let o=ctx.createOscillator(); let g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=120; g.gain.value=0.3; o.start(); o.stop(ctx.currentTime+0.5);}catch(e){} }
+function playRainLoop(){ if(!soundOn) return; try{ let ctx=getAudio(); let buffer=ctx.createBuffer(1, ctx.sampleRate*1, ctx.sampleRate); let data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ data[i]=(Math.random()*2-1)*0.04; } let src=ctx.createBufferSource(); src.buffer=buffer; src.loop=true; let filter=ctx.createBiquadFilter(); filter.type='highpass'; filter.frequency.value=1200; let gain=ctx.createGain(); gain.gain.value=0.35; src.connect(filter); filter.connect(gain); gain.connect(ctx.destination); src.start(); window._rainSrc=src; }catch(e){} }
+function playHitSound(){ if(!soundOn) return; try{ let ctx=getAudio(); let o=ctx.createOscillator(); let g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=1800; g.gain.value=0.18; o.start(); o.stop(ctx.currentTime+0.08);}catch(e){} }
+function playReloadSound(){ if(!soundOn) return; try{ let ctx=getAudio(); [300,500,700].forEach((f,i)=>{ let o=ctx.createOscillator(); let g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=f; g.gain.value=0.12; o.start(ctx.currentTime+i*0.15); o.stop(ctx.currentTime+i*0.15+0.08); }); }catch(e){} }
+function playEmptySound(){ if(!soundOn) return; try{ let ctx=getAudio(); let o=ctx.createOscillator(); let g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=250; g.gain.value=0.15; o.start(); o.stop(ctx.currentTime+0.06);}catch(e){} }
+function toggleSound(){ soundOn=!soundOn; document.getElementById('soundBtn').innerText = soundOn ? '🔊 ON' : '🔇 OFF'; if(!soundOn && window._rainSrc){ try{window._rainSrc.stop()}catch(e){} } if(soundOn) playRainLoop(); }
+let rain=document.getElementById('rain');
+for(let i=0;i<70;i++){let d=document.createElement('div');d.className='drop';d.style.left=Math.random()*100+'%';d.style.top=(-Math.random()*100)+'px';d.style.animationDuration=(0.5+Math.random()*0.6)+'s';d.style.animationDelay=(Math.random()*1)+'s';rain.appendChild(d);}
+function getLB(){ try{return JSON.parse(localStorage.getItem('shadow_lb')||'[]')}catch(e){return []} }
+function saveLB(list){ localStorage.setItem('shadow_lb', JSON.stringify(list)); }
+function renderLB(){
+  let list=getLB().sort((a,b)=>b.score-a.score).slice(0,5);
+  let html=list.length? list.map((p,i)=>`<div class="lb-row ${p.name==playerName?'me':''}"><span>${i+1}. ${p.name} ${p.name==playerName?'• YOU':''}</span><b>${p.kills} kills • ${p.score} pts • 🎯${p.headshots||0}</b></div>`).join('') : '<div style="opacity:.6;font-size:13px">No scores yet. Be the first!</div>';
+  document.getElementById('lbList').innerHTML=html; document.getElementById('lbList2').innerHTML=html;
+  let best=list.length? list[0].kills:0; document.getElementById('best').innerText=best;
+}
+renderLB();
+function setWeapon(w){
+  weapon=w;
+  document.querySelectorAll('.weaponBtn').forEach(b=>b.classList.remove('active'));
+  if(w=='M4'){ maxAmmo=30; document.getElementById('w-m4').classList.add('active'); document.getElementById('gunLabel').innerText='M4A1 • NIGHT OPS'; }
+  if(w=='SNIPER'){ maxAmmo=5; document.getElementById('w-sniper').classList.add('active'); document.getElementById('gunLabel').innerText='SNIPER • 4X ZOOM'; if(!scoped) toggleScope(); }
+  if(w=='SHOTGUN'){ maxAmmo=8; document.getElementById('w-shotgun').classList.add('active'); document.getElementById('gunLabel').innerText='SHOTGUN • CLOSE RANGE'; if(scoped) toggleScope(); }
+  ammo=maxAmmo; document.getElementById('weaponName').innerText=w; document.getElementById('maxAmmo').innerText=maxAmmo; updateHUD();
+}
+function toggleScope(){
+  scoped=!scoped;
+  document.getElementById('scope').classList.toggle('show', scoped);
+  document.getElementById('gun').classList.toggle('scoped', scoped);
+  document.getElementById('scopeBtn').innerText = scoped ? '❌ EXIT SCOPE' : '🎯 SCOPE';
+  document.getElementById('scopeBtn').style.background = scoped ? '#ff1744' : '#00e676';
+  document.getElementById('scopeBtn').style.color = scoped ? '#fff' : '#000';
+  document.getElementById('crosshair').style.display = scoped ? 'none' : 'block';
+  if(scoped) playHitSound();
+}
+document.getElementById('scopeBtn').onclick=toggleScope;
+function showBanner(big, sub){ let b=document.getElementById('killBanner'); document.getElementById('bannerBig').innerText=big; document.getElementById('bannerSub').innerText=sub; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show'); playStreakSound(); }
+function updateStreak(){
+  let now=Date.now();
+  if(now - lastKillTime < 4000){ streak++; } else { streak=1; }
+  lastKillTime=now; if(streak>bestStreak) bestStreak=streak;
+  let badge=document.getElementById('streakBadge');
+  if(streak>=2){ badge.style.display='block'; badge.innerText=`🔥 STREAK x${streak}`; } else { badge.style.display='none'; }
+  if(streak==3){ showBanner('DOUBLE KILL!', '+50 BONUS'); totalScore+=50; }
+  if(streak==5){ showBanner('TRIPLE KILL!', '+100 BONUS • +20 HEALTH'); totalScore+=100; health=Math.min(100, health+20); }
+  if(streak==7){ showBanner('🔥 RAMPAGE!', '+200 BONUS • FULL AMMO'); totalScore+=200; ammo=maxAmmo; }
+  if(streak==10){ showBanner('👑 UNSTOPPABLE!', '+500 BONUS • ARMOR +50'); totalScore+=500; armor=Math.min(100, armor+50); }
+  setTimeout(()=>{ if(Date.now()-lastKillTime>=4000){ streak=0; document.getElementById('streakBadge').style.display='none'; } },4100);
+}
+function useMedkit(){ if(medkits<=0){ alert('No medkits left! Get streaks to earn more.'); return; } if(health>=100){ alert('Health is full!'); return; } medkits--; health=Math.min(100, health+50); updateHUD(); showBanner('❤️ +50 HEALTH', 'MEDKIT USED'); }
+function throwGrenade(){
+  if(!playing) return; if(grenades<=0){ alert('No grenades!'); return; }
+  grenades--; updateHUD();
+  let fx=document.getElementById('grenadeFx'); fx.classList.remove('show'); void fx.offsetWidth; fx.classList.add('show');
+  playGunSound();
+  let layer=document.getElementById('enemyLayer');
+  let enemies=[...layer.querySelectorAll('.enemy')];
+  enemies.forEach(e=>{ e.remove(); kills++; totalScore+=100; });
+  if(enemies.length>0){ showBanner('💣 GRENADE!', `KILLED ${enemies.length} ENEMIES!`); updateStreak(); }
+  updateHUD();
+}
+document.getElementById('grenadeBtn').onclick=throwGrenade;
+function startGame(){
+  let name=document.getElementById('nameInput').value.trim();
+  if(name) playerName=name.toUpperCase(); else playerName='SHADOW STRIKE';
+  document.getElementById('playerNameDisplay').innerText=playerName;
+  kills=0; headshots=0; bossKills=0; ammo=30; maxAmmo=30; health=100; armor=0; medkits=1; grenades=2; timeLeft=90; wave=1; level=1; shots=0; hits=0; playing=true; streak=0; bestStreak=0; totalScore=0; lastKillTime=0; bossActive=false;
+  setWeapon('M4'); if(scoped) toggleScope();
+  document.getElementById('startScreen').classList.add('hidden'); document.getElementById('gameOver').classList.add('hidden'); document.getElementById('goldMsg').style.display='none';
+  document.getElementById('enemyLayer').innerHTML=''; document.getElementById('streakBadge').style.display='none';
+  updateHUD(); playRainLoop();
+  clearInterval(timerInt); clearInterval(spawnInt); clearInterval(bossInt);
+  timerInt=setInterval(()=>{ timeLeft--; document.getElementById('timer').innerText='⏱ '+timeLeft+'s'; if(timeLeft<=0) endGame(); if(timeLeft%20==0 && timeLeft>0){wave++; level=Math.ceil(wave/2); document.getElementById('wave').innerText=wave; document.getElementById('level').innerText=level;} },1000);
+  spawnInt=setInterval(spawnEnemy, 850);
+  bossInt=setInterval(spawnBoss, 30000);
+  spawnEnemy(); spawnEnemy();
+  setTimeout(spawnBoss, 15000);
+}
+function updateHUD(){ document.getElementById('kills').innerText=kills; document.getElementById('headshots').innerText=headshots; document.getElementById('bossKills').innerText=bossKills; document.getElementById('ammo').innerText=ammo; document.getElementById('healthText').innerText=health; document.getElementById('healthFill').style.width=health+'%'; document.getElementById('wave').innerText=wave; document.getElementById('level').innerText=level; document.getElementById('armor').innerText=armor; document.getElementById('medkit').innerText=medkits; document.getElementById('grenades').innerText=grenades; }
+function spawnEnemy(){
+  if(!playing) return; let layer=document.getElementById('enemyLayer'); if(layer.children.length>=7) return;
+  let e=document.createElement('div'); e.className='enemy'; e.style.left=(Math.random()*82+4)+'%'; e.style.top=(38+Math.random()*28)+'%';
+  let scale = scoped ? 1.35 : 0.8+Math.random()*0.6; e.style.transform=`scale(${scale})`;
+  e.innerHTML=`<div class="body"><div class="head">🎯</div><div class="vest">BODY</div><div class="gun"></div></div>`;
+  e.querySelector('.head').onclick=(ev)=>{ev.stopPropagation(); shootEnemy(e, true, false);};
+  e.querySelector('.vest').onclick=(ev)=>{ev.stopPropagation(); shootEnemy(e, false, false);};
+  e.onclick=(ev)=>{ev.stopPropagation(); shootEnemy(e, false, false);};
+  layer.appendChild(e);
+  let move=setInterval(()=>{ if(!playing || !e.isConnected){clearInterval(move); return;} let top=parseFloat(e.style.top); e.style.top=(top+1.1)+'%'; if(top>78){ e.remove(); clearInterval(move); takeDamage(16); streak=0; document.getElementById('streakBadge').style.display='none'; } },120);
+  setTimeout(()=>{if(e.isConnected){e.remove();}}, 8000);
+}
+function spawnBoss(){
+  if(!playing || bossActive) return; bossActive=true; bossHP=5; playBossSound(); showBanner('👹 BOSS INCOMING!', '5 HEADSHOTS TO KILL • +1000 PTS');
+  let layer=document.getElementById('enemyLayer');
+  let b=document.createElement('div'); b.className='enemy boss'; b.style.left='38%'; b.style.top='42%';
+  b.innerHTML=`<div class="bossName">👹 WARLORD BOSS</div><div class="bossBar"><div class="bossFill" id="bossFill"></div></div><div class="body"><div class="head">💀</div><div class="vest">BOSS</div><div class="gun"></div></div>`;
+  b.querySelector('.head').onclick=(ev)=>{ev.stopPropagation(); hitBoss(b, true);};
+  b.onclick=(ev)=>{ev.stopPropagation(); hitBoss(b, false);};
+  layer.appendChild(b);
+  let move=setInterval(()=>{ if(!playing || !b.isConnected){clearInterval(move); return;} let top=parseFloat(b.style.top); b.style.top=(top+0.6)+'%'; if(top>75){ b.remove(); clearInterval(move); bossActive=false; takeDamage(30); } },120);
+}
+function hitBoss(b, isHead){
+  if(!playing) return; if(ammo<=0){ playEmptySound(); alert('Reload!'); return; }
+  ammo--; shots++; hits++; doFlash();
+  bossHP -= isHead ? 2 : 1;
+  let fill=document.getElementById('bossFill'); if(fill) fill.style.width=(bossHP/5*100)+'%';
+  if(isHead){ headshots++; showBanner('🎯 BOSS HEADSHOT!', 'DOUBLE DAMAGE!'); playHeadshotSound(); } else { playHitSound(); }
+  if(bossHP<=0){
+    b.remove(); bossActive=false; bossKills++; kills++; totalScore+=1000; armor=Math.min(100, armor+25); grenades+=1; medkits+=1;
+    showBanner('👹 BOSS DOWN!', '+1000 PTS • +ARMOR • +GRENADE');
+    updateStreak(); updateHUD();
+  }
+  updateHUD();
+}
+function doFlash(){ let flash=document.getElementById('flash'); flash.classList.remove('show'); void flash.offsetWidth; flash.classList.add('show'); let gun=document.getElementById('gun'); gun.classList.add('recoil'); setTimeout(()=>gun.classList.remove('recoil'),90); let ch=document.getElementById('crosshair'); ch.style.transform='translate(-50%,-50%) scale(1.25)'; setTimeout(()=>ch.style.transform='translate(-50%,-50%) scale(1)',90); playGunSound(); }
+function shootEnemy(e, isHead){
+  if(!playing) return; if(ammo<=0){ playEmptySound(); alert('Out of ammo! Press RELOAD'); return; }
+  ammo--; shots++; hits++; doFlash();
+  let hm=document.getElementById('hitmarker'); hm.classList.remove('show'); void hm.offsetWidth;
+  let base = weapon=='SNIPER' ? 300 : weapon=='SHOTGUN' ? 250 : 100;
+  if(isHead){ hm.classList.add('head'); hm.innerText='✕ HEADSHOT'; playHeadshotSound(); headshots++; e.classList.add('headshot'); showBanner('🎯 HEADSHOT!', '+3 PTS • +300 SCORE'); totalScore += 300 + base; kills += scoped ? 2 : 1; }
+  else { hm.classList.remove('head'); hm.innerText='✕'; playHitSound(); e.classList.add('hit'); kills += scoped ? 2 : 1; totalScore += base; if(weapon=='SHOTGUN'){ let layer=document.getElementById('enemyLayer'); let others=[...layer.querySelectorAll('.enemy')].slice(0,1); others.forEach(o=>{ if(o!==e){ o.remove(); kills++; totalScore+=100; } }); } }
+  hm.classList.add('show'); setTimeout(()=>{e.remove();},180); updateStreak(); updateHUD();
+}
+function takeDamage(amount){ let absorbed=Math.min(armor, amount); armor-=absorbed; let real=amount-absorbed; health-=real; if(health<0) health=0; updateHUD(); let d=document.getElementById('damage'); d.classList.add('show'); setTimeout(()=>d.classList.remove('show'),300); if(health<=0) endGame(); }
+function reload(){ if(!playing) return; playReloadSound(); document.getElementById('reloadBtn').innerText='RELOADING...'; setTimeout(()=>{ammo=maxAmmo; updateHUD(); document.getElementById('reloadBtn').innerText='↻ RELOAD';},600); }
+document.getElementById('reloadBtn').onclick=reload;
+document.getElementById('fireBtn').onclick=()=>{ if(!playing) return; if(ammo<=0){playEmptySound(); alert('Reload!'); return;} ammo--; shots++; doFlash(); updateHUD(); };
+document.getElementById('gameWrap').addEventListener('click',(e)=>{ if(!playing) return; if(e.target.closest('.enemy') || e.target.closest('button') || e.target.closest('input')) return; if(ammo>0){ammo--; shots++; doFlash(); updateHUD();} });
+document.addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()=='r') reload();
+  if(e.key.toLowerCase()=='s') toggleScope();
+  if(e.key.toLowerCase()=='g') throwGrenade();
+  if(e.key=='1') setWeapon('M4'); if(e.key=='2') setWeapon('SNIPER'); if(e.key=='3') setWeapon('SHOTGUN');
+  if(e.key==' '){e.preventDefault(); document.getElementById('fireBtn').click();}
+});
+function showMenu(){ document.getElementById('gameOver').classList.add('hidden'); document.getElementById('startScreen').classList.remove('hidden'); renderLB(); }
+function shareScore(){ let text=`I just scored ${document.getElementById('finalScore').innerText} pts in SHADOW STRIKE! 🎯 ${document.getElementById('finalKills').innerText} kills, ${document.getElementById('finalHead').innerText} headshots. Play it here: ` + location.href; window.open('https://wa.me/?text='+encodeURIComponent(text), '_blank'); }
+function copyLink(){ navigator.clipboard.writeText(location.href).then(()=>alert('Link copied! Share it!')); }
+function endGame(){
+  playing=false; clearInterval(timerInt); clearInterval(spawnInt); clearInterval(bossInt);
+  if(scoped) toggleScope(); if(window._rainSrc){ try{window._rainSrc.stop()}catch(e){} }
+  document.getElementById('enemyLayer').innerHTML='';
+  let acc = shots==0?0:Math.round(hits/shots*100);
+  let finalScore = totalScore + acc;
+  document.getElementById('finalKills').innerText=kills; document.getElementById('finalHead').innerText=headshots; document.getElementById('finalBoss').innerText=bossKills; document.getElementById('finalStreak').innerText=bestStreak; document.getElementById('finalAcc').innerText=acc+'%'; document.getElementById('finalScore').innerText=finalScore; document.getElementById('finalWave').innerText=wave; document.getElementById('finalName').innerText=playerName;
+  if(kills>=15){ document.getElementById('goldMsg').style.display='block'; }
+  let list=getLB(); list.push({name:playerName, kills:kills, headshots:headshots, score:finalScore, date:new Date().toLocaleDateString()}); saveLB(list); renderLB();
+  document.getElementById('gameOver').classList.remove('hidden');
+}
+</script>
+</body>
+  </html>
